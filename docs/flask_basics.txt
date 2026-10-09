@@ -1,0 +1,58 @@
+FLASK BASICS
+
+Flask is a lightweight Python web framework used to build web applications and APIs.
+
+ROUTES
+
+A route connects a URL to a Python function. The @app.route() decorator is used to define a route.
+
+Example:
+
+@app.route("/hello")
+def hello():
+    return "Hello World"
+
+
+REQUEST DATA
+
+Flask provides the request object to access data sent by the client.
+
+For JSON request data, use request.get_json().
+
+Example:
+
+from flask import request
+
+data = request.get_json()
+
+
+QUERY PARAMETERS
+
+Query parameters can be accessed using request.args.
+
+Example:
+
+name = request.args.get("name")
+
+
+PATH PARAMETERS
+
+Dynamic values can be included in a route.
+
+Example:
+
+@app.route("/users/<int:user_id>")
+def get_user(user_id):
+    return {"user_id": user_id}
+
+
+HTTP METHODS
+
+A route can accept different HTTP methods such as GET, POST, PUT, and DELETE.
+
+Example:
+
+@app.route("/users", methods=["POST"])
+def create_user():
+    data = request.get_json()
+    return {"message": "User created"}
