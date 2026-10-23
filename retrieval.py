@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import faiss
 import numpy as np 
+from relevance_checker import check_relevance
 
 # Load API key from .env
 load_dotenv()
@@ -44,7 +45,7 @@ index.add(embedding_array)
 
 # Search for relevant documentation 
 
-user_query = "What is Flask's refund policy?"
+user_query = "How can I read JSON data sent by a client?"
 
 # Convert users question into embeddings
 query_response = client.embeddings.create(
@@ -60,10 +61,16 @@ query_vector = np.array([query_embedding],dtype="float32")
 # Find to nearest vectors in faiss
 distances,indices = index.search(query_vector,k=2)
 
-# print("Distances:", distances)
+print("Distances:", distances)
+print("Retrieved chunk position:",indices)
+
+print("\nRetrieved Chunk:")
+for chunk_ind in indices[0]:
+    print(f"\nPosition:{chunk_ind}")
+    print(chunks[chunk_ind])
 
 # Check whether the nearest chunk is close enough
-distance_threshold = 1.0
+distance_threshold = 1.5
 
 # Collect retrieved documentation chunks
 relevant_chunks = []
@@ -72,6 +79,19 @@ for distance, chunk_index in zip(distances[0],indices[0]):
     if distance <= distance_threshold:
         relevant_chunks.append(chunks[chunk_index])
 
+# Check each retrieved chunk for relevance
+verified_chunks = []
+for chunk in relevant_chunks:
+    label = check_relevance(user_query, chunk)
+
+    print(f"\nRelevance label:{label}")
+
+    if label in ["RELEVANT","PARTIALLY RELEVANT"]:
+        verified_chunks.append(chunk)
+
+# Keep only verified chunks
+relevant_chunks = verified_chunks
+
 if not relevant_chunks:
     print("\nCopilot Answer:")
     print("I couldn't find sufficiently relevant information in the provided documentation.")
@@ -79,10 +99,6 @@ if not relevant_chunks:
 
 # Use only the chunks that passed the threshold
 context = "\n\n".join(relevant_chunks)
-
-# print("\nRelevant chunks found:", len(relevant_chunks))
-# print("\nFiltered Context:")
-# print(context)
 
 # Build the prompt using instructions, context and user question
 prompt = f"""
@@ -112,5 +128,5 @@ response = client.responses.create(
 )
 
 # Display the generated answer
-print("Copilot Answer :")
+print("\nCopilot Answer :")
 print(response.output_text)
