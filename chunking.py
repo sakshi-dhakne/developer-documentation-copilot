@@ -1,38 +1,52 @@
+import os 
 
 def split_into_chunks(file_path):
-   # Open the documentation file 
-   with open(file_path,"r",encoding="utf-8") as file:
-       text = file.read()
+  # Open the documentation file 
+  with open(file_path,"r",encoding="utf-8") as file:
+    text = file.read()
 
-   # Spilt the document into lines
-   lines = text.splitlines()
+  # Get the documentation file name 
+  source = os.path.basename(file_path)
 
-   chunks = []
-   curr_chunk = []
+  # Spilt the document into lines
+  lines = text.splitlines()
 
-   # Go through each line 
-   for line in lines:
-      line = line.rstrip()
+  chunks = [] 
+  curr_chunk = []
+  current_heading = None
 
-      # Skip completely empty lines
-      if not line:
-        continue
+  # Go through each line 
+  for line in lines:
+    line = line.rstrip()
 
-      # Check if line looks like a heading
-      if line.isupper():
-        # saving previous chunk before starting a new one
-        if curr_chunk:
-            chunks.append("\n".join(curr_chunk))
+    # Skip completely empty lines
+    if not line:
+      continue
 
-        # start a new chunk with heading
-        curr_chunk = [line]
+    # Check if line looks like a heading
+    if line.isupper():
+      # saving previous chunk before starting a new one
+      if curr_chunk:
+        chunks.append({
+          'source':source,
+          'heading':current_heading,
+          'content':"\n".join(curr_chunk)
+        })
 
-      else:
-        # add normal content to the current chunk
-        curr_chunk.append(line)
+      # start a new chunk with heading
+      current_heading = line
+      curr_chunk = [line]
 
-   # Add final chunk 
-   if curr_chunk:
-      chunks.append("\n".join(curr_chunk))
+    else:
+      # add normal content to the current chunk
+      curr_chunk.append(line)
 
-   return chunks
+  # Add final chunk 
+  if curr_chunk:
+    chunks.append({
+      'source':source,
+      'heading':current_heading,
+      'content':"\n".join(curr_chunk)
+    })
+
+  return chunks

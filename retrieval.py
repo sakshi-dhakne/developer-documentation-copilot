@@ -20,7 +20,7 @@ chunks = split_into_chunks("docs/flask_basics.txt")
 # Generate an embedding for each chunk
 response = client.embeddings.create(
     model="text-embedding-3-small",
-    input=chunks
+    input=[chunk['content'] for chunk in chunks]
 )
 
 # Extract the vectors
@@ -59,7 +59,7 @@ query_embedding = query_response.data[0].embedding
 query_vector = np.array([query_embedding],dtype="float32")
 
 # Find to nearest vectors in faiss
-distances,indices = index.search(query_vector,k=2)
+distances,indices = index.search(query_vector,k=5)
 
 print("Distances:", distances)
 print("Retrieved chunk position:",indices)
@@ -67,10 +67,15 @@ print("Retrieved chunk position:",indices)
 print("\nRetrieved Chunk:")
 for chunk_ind in indices[0]:
     print(f"\nPosition:{chunk_ind}")
-    print(chunks[chunk_ind])
+    
+    chunk = chunks[chunk_ind]
+
+    print("Source :",chunk['source'])
+    print("Heading :",chunk['heading'])
+    print("Content :",chunk['content'])
 
 # Check whether the nearest chunk is close enough
-distance_threshold = 1.5
+distance_threshold = 1.4
 
 # Collect retrieved documentation chunks
 relevant_chunks = []
@@ -82,7 +87,7 @@ for distance, chunk_index in zip(distances[0],indices[0]):
 # Check each retrieved chunk for relevance
 verified_chunks = []
 for chunk in relevant_chunks:
-    label = check_relevance(user_query, chunk)
+    label = check_relevance(user_query, chunk['content'])
 
     print(f"\nRelevance label:{label}")
 
@@ -98,7 +103,9 @@ if not relevant_chunks:
     exit()
 
 # Use only the chunks that passed the threshold
-context = "\n\n".join(relevant_chunks)
+context = "\n\n".join(
+    chunk['content'] for chunk in relevant_chunks
+    )
 
 # Build the prompt using instructions, context and user question
 prompt = f"""
@@ -130,3 +137,9 @@ response = client.responses.create(
 # Display the generated answer
 print("\nCopilot Answer :")
 print(response.output_text)
+
+# Display source references
+print("\nSource References :")
+
+for chunk in relevant_chunks:
+    print(f"-{chunk['source']} | Section:{chunk['heading']}")
