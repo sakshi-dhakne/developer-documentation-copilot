@@ -1,0 +1,27 @@
+
+PYTHON BASICS
+
+Python is a high-level, interpreted programming language.
+
+VARIABLES
+
+Variables are used to store data values.
+Example:
+name = "Alice"
+age = 25
+
+DATA TYPES
+
+Python has built-in data types such as strings, integers, floats, lists, tuples, and dictionaries.
+Example:
+name = "Alice"
+age = 25
+price = 99.5
+
+FUNCTIONS
+
+Functions are reusable blocks of code that perform a specific task.
+Functions are defined using the def keyword.
+Example:
+def greet(name):
+    return "Hello " + name

@@ -6,6 +6,7 @@ import os
 import faiss
 import numpy as np 
 from relevance_checker import check_relevance
+import glob
 
 # Load API key from .env
 load_dotenv()
@@ -13,9 +14,19 @@ api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
 # Load the flask documentation into chunks
-chunks = split_into_chunks("docs/flask_basics.txt")
+doc_files = glob.glob("docs/*.txt")
 
-# print("Total chunks:",len(chunks))
+chunks = []
+
+for file_path in doc_files:
+    chunks.extend(split_into_chunks(file_path))
+
+print("Total documents:",len(doc_files))
+print("Total chunks:",len(chunks))
+
+for chunk in chunks:
+    print(f"\nSource:{chunk['source']}")
+    print(f"\nHeading:{chunk['heading']}")
 
 # Generate an embedding for each chunk
 response = client.embeddings.create(
@@ -45,7 +56,7 @@ index.add(embedding_array)
 
 # Search for relevant documentation 
 
-user_query = "How can I read JSON data sent by a client?"
+user_query = "How do I define a route in Flask?"
 
 # Convert users question into embeddings
 query_response = client.embeddings.create(
