@@ -16,10 +16,24 @@ client = OpenAI(api_key=api_key)
 # Load the flask documentation into chunks
 doc_files = glob.glob("docs/*.txt")
 
+if not doc_files:
+    print("No documentation files found in the docs folder.")
+    exit()
+
 chunks = []
 
 for file_path in doc_files:
-    chunks.extend(split_into_chunks(file_path))
+    file_chunks = split_into_chunks(file_path)
+
+    if not file_chunks:
+        print(f"Warning: {file_path} is empty or contains no valid sections.")
+        continue
+
+    chunks.extend(file_chunks)
+
+if not chunks:
+    print("No valid documentation content found.")
+    exit()
 
 print("Total documents:",len(doc_files))
 print("Total chunks:",len(chunks))
@@ -29,10 +43,15 @@ for chunk in chunks:
     print(f"\nHeading:{chunk['heading']}")
 
 # Generate an embedding for each chunk
-response = client.embeddings.create(
-    model="text-embedding-3-small",
-    input=[chunk['content'] for chunk in chunks]
-)
+try:
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=[chunk['content'] for chunk in chunks]
+    )
+
+except Exception as e:
+    print("Error while generating embeddings:", e)
+    exit()
 
 # Extract the vectors
 embeddings = [item.embedding for item in response.data]
@@ -53,10 +72,13 @@ index.add(embedding_array)
 
 # print("vectors stored in faiss :",index.ntotal)
 
-
 # Search for relevant documentation 
 
-user_query = "How do I define a route in Flask?"
+user_query = "How do I define a Python function?"
+
+if not user_query.strip():
+    print("Please enter a valid question.")
+    exit()
 
 # Convert users question into embeddings
 query_response = client.embeddings.create(
@@ -77,8 +99,12 @@ print("Retrieved chunk position:",indices)
 
 print("\nRetrieved Chunk:")
 for chunk_ind in indices[0]:
+
+    if chunk_ind == -1:
+        continue
+
     print(f"\nPosition:{chunk_ind}")
-    
+
     chunk = chunks[chunk_ind]
 
     print("Source :",chunk['source'])
@@ -92,6 +118,10 @@ distance_threshold = 1.4
 relevant_chunks = []
 
 for distance, chunk_index in zip(distances[0],indices[0]):
+
+    if chunk_index == -1:
+        continue
+
     if distance <= distance_threshold:
         relevant_chunks.append(chunks[chunk_index])
 
@@ -140,10 +170,14 @@ Answer :
 # print(prompt)
 
 # Send the prompt to LLM
-response = client.responses.create(
+try:
+  response = client.responses.create(
     model="gpt-4o-mini",
     input=prompt
-)
+  )
+except Exception as e:
+    print("Error while generating the answer:", e)
+    exit()
 
 # Display the generated answer
 print("\nCopilot Answer :")
