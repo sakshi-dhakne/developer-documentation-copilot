@@ -1,4 +1,3 @@
-
 from chunking import split_into_chunks
 from openai import OpenAI
 from dotenv import load_dotenv
